@@ -55,7 +55,7 @@ def generate_response(tweet):
     try:
         response_json = json.loads(response.text)
     except Exception as e:
-        print(e, file=sys.stderr)
+        print(e)
         raise Exception("OpenAI API error")
 
 
@@ -63,8 +63,8 @@ def generate_response(tweet):
         text = response_json['choices'][0]['text']
         text = sanitize_ai_response(text)
     except Exception as e:
-        print(e, file=sys.stderr)
-        print(response_json, file=sys.stderr)
+        print(e)
+        print(response_json)
         raise Exception("OpenAI API error")
     return text
 
@@ -155,7 +155,7 @@ def main():
         tweet = generate_guru_tweet()
         status_tweet = api.update_status(tweet)
         api.create_favorite(status_tweet.id)
-        print(f"Made top level tweet: https://twitter.com/roboticHugo/status/{status_tweet.id}", file=sys.stderr)
+        print(f"Made top level tweet: https://twitter.com/roboticHugo/status/{status_tweet.id}")
 
     # print to stderr
     print("Starting main loop...", file=sys.stderr)
@@ -166,7 +166,7 @@ def main():
             # get tweets
             tweets = api.home_timeline(tweet_mode="extended", count=100)
             invalid_tweet_count = 0
-            print(f"Fetched {len(tweets)} tweets", file=sys.stderr)
+            print(f"Fetched {len(tweets)} tweets")
             for tweet in tweets:
 
                 # print(f"Checking tweet: {tweet.id}... (url: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id})")
@@ -177,7 +177,7 @@ def main():
                     if random.random() < 0.02: # small chance of liking the tweet
                         if not tweet.favorited:
                             api.create_favorite(tweet.id)
-                            print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}", file=sys.stderr)
+                            print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
                             time.sleep(random.randint(10, 30))
 
                     continue
@@ -189,21 +189,21 @@ def main():
                     # like the tweet some times regardless
                     if random.random() < 0.2:
                         api.create_favorite(tweet.id)
-                        print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}", file=sys.stderr)
+                        print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
                         time.sleep(random.randint(10, 30))
                     continue
 
                 try:
 
                     # print to log
-                    print(f"==================== Tweet ====================", file=sys.stderr)
-                    print(f"{tweet.full_text}", file=sys.stderr)
-                    print(f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}", file=sys.stderr)
-                    print(f"==================== Response ====================", file=sys.stderr)
+                    print(f"==================== Tweet ====================")
+                    print(f"{tweet.full_text}")
+                    print(f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                    print(f"==================== Response ====================")
                     # generate response
                     response = generate_response(tweet)
-                    print(f"{response}", file=sys.stderr)
-                    print(f"==================== End ====================", file=sys.stderr)
+                    print(f"{response}")
+                    print(f"==================== End ====================")
 
                     # reply to tweet
                     response_tweet = api.update_status(response, in_reply_to_status_id=tweet.id, auto_populate_reply_metadata=True)
@@ -218,18 +218,18 @@ def main():
                     api.create_favorite(tweet.id)
 
                 except Exception as e:
-                    print(e, file=sys.stderr)
-                    print("Error, continuing...", file=sys.stderr)
+                    print(e)
+                    print("Error, continuing...")
                     continue
 
                 # wait random amount of time to avoid rate limiting (5 - 15 seconds)
                 time_to_wait = random.randint(60, 240)
-                print(f"Waiting {time_to_wait} seconds before checking for new tweets...", file=sys.stderr)
+                print(f"Waiting {time_to_wait} seconds before checking for new tweets...")
                 time.sleep(time_to_wait)
             
             # wait 5 minutes before checking for new tweets
-            print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)", file=sys.stderr)
-            print("Waiting 10 minutes before checking for new tweets...\n", file=sys.stderr)
+            print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)")
+            print("Waiting 10 minutes before checking for new tweets...\n")
             time.sleep(60 * 10)
             minutes_passed += 10
 
@@ -241,12 +241,12 @@ def main():
                     status_tweet = api.update_status(tweet)
                     api.create_favorite(status_tweet.id)
                 except Exception as e:
-                    print(e, file=sys.stderr)
-                    print("Error, continuing...", file=sys.stderr)
+                    print(e)
+                    print("Error, continuing...")
                     continue
         except Exception as e:
-            print(e, file=sys.stderr)
-            print("Error, waiting 1 hour before trying again...", file=sys.stderr)
+            print(e)
+            print("Error, waiting 1 hour before trying again...")
             time.sleep(60 * 60)
             continue
         
@@ -277,7 +277,7 @@ Generate a {random.choice(adjectives)} tweet that you would post to your twitter
     try:
         response_json = json.loads(response.text)
     except Exception as e:
-        print(e, file=sys.stderr)
+        print(e)
         raise Exception("OpenAI API error")
 
 
