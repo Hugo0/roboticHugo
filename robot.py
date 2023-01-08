@@ -6,6 +6,7 @@ import json
 import time
 import random
 import urllib3
+import datetime
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Load environment variables
@@ -113,8 +114,10 @@ def is_tweet_valid(tweet):
     # exempt @roboticHugo tweets from being replied to
     if tweet.user.screen_name == "roboticHugo":
         return False
-
-    # check if any of the replies to the tweet are from the bot (roboticHugo)
+    # check tweet should have more than 20 characters
+    if len(tweet.full_text) < 20:
+        return False
+    # check if any of the replies to the tweet are from the bot already (roboticHugo)
     for reply in tweepy.Cursor(api.search_tweets, q=f"to:{tweet.user.screen_name}", since_id=tweet.id, tweet_mode="extended").items():
         if reply.user.screen_name == "roboticHugo":
             return False
@@ -143,6 +146,18 @@ def main():
     
         To not double reply, we keep track of the tweet ids we have replied to in a file
     """
+    # check last time the bot made a top level tweet
+    last_tweet_time = api.user_timeline(screen_name="roboticHugo", count=1, tweet_mode="extended", exclude_replies=True)[0].created_at
+    hours_since = (datetime.datetime.now(tz=datetime.timezone.utc) - last_tweet_time).total_seconds() / 3600
+    if hours_since > 8:
+        # make a top level guru tweet
+        tweet = generate_guru_tweet()
+        status_tweet = api.update_status(tweet)
+        api.create_favorite(status_tweet.id)
+        print(f"Made top level tweet: https://twitter.com/roboticHugo/status/{status_tweet.id}")
+
+
+
     minutes_passed = 0
     while True:
         # get tweets
@@ -154,6 +169,11 @@ def main():
             # check if tweet is valid
             if not is_tweet_valid(tweet):
                 invalid_tweet_count += 1
+                continue
+
+            # have random 70% chance of not replying to tweet (to appease the twitter gods)
+            if random.random() < 0.7:
+                add_replied_to_tweet(tweet.id)
                 continue
 
             try:
@@ -192,12 +212,12 @@ def main():
         
         # wait 5 minutes before checking for new tweets
         print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)")
-        print("Waiting 5 minutes before checking for new tweets...\n")
-        time.sleep(60 * 5)
-        minutes_passed += 5
+        print("Waiting 10 minutes before checking for new tweets...\n")
+        time.sleep(60 * 10)
+        minutes_passed += 10
 
-        # if 3 hours have passed, make a tweet
-        if minutes_passed >= 360:
+        # if 8 hours have passed, make a dumb guru tweet
+        if minutes_passed >= 480:
             minutes_passed = 0
             try:
                 tweet = generate_guru_tweet()
