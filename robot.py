@@ -114,6 +114,11 @@ def is_tweet_valid(tweet):
     if tweet.user.screen_name == "roboticHugo":
         return False
 
+    # check if any of the replies to the tweet are from the bot (roboticHugo)
+    for reply in tweepy.Cursor(api.search_tweets, q=f"to:{tweet.user.screen_name}", since_id=tweet.id, tweet_mode="extended").items():
+        if reply.user.screen_name == "roboticHugo":
+            return False
+
     return True
 
 
