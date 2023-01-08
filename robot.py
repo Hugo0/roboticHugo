@@ -169,11 +169,20 @@ def main():
             # check if tweet is valid
             if not is_tweet_valid(tweet):
                 invalid_tweet_count += 1
+                
+                # like the tweet if it hasn't been liked already
+                if random.random() < 0.05:
+                    if not tweet.favorited:
+                        api.create_favorite(tweet.id)
                 continue
 
             # have random 70% chance of not replying to tweet (to appease the twitter gods)
             if random.random() < 0.7:
                 add_replied_to_tweet(tweet.id)
+
+                # like the tweet half the time
+                if random.random() < 0.5:
+                    api.create_favorite(tweet.id)
                 continue
 
             try:
