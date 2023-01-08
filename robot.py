@@ -160,82 +160,93 @@ def main():
 
     minutes_passed = 0
     while True:
-        # get tweets
-        tweets = api.home_timeline(tweet_mode="extended", count=100)
-        invalid_tweet_count = 0
-        print(f"Fetched {len(tweets)} tweets")
-        for tweet in tweets:
-            # print(f"Checking tweet: {tweet.id}... (url: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id})")
-            # check if tweet is valid
-            if not is_tweet_valid(tweet):
-                invalid_tweet_count += 1
-                
-                # like the tweet if it hasn't been liked already
-                if random.random() < 0.05:
-                    if not tweet.favorited:
+        try:
+            # get tweets
+            tweets = api.home_timeline(tweet_mode="extended", count=100)
+            invalid_tweet_count = 0
+            print(f"Fetched {len(tweets)} tweets")
+            for tweet in tweets:
+
+                # print(f"Checking tweet: {tweet.id}... (url: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id})")
+                # check if tweet is valid
+                if not is_tweet_valid(tweet):
+                    invalid_tweet_count += 1
+                    
+                    if random.random() < 0.02: # small chance of liking the tweet
+                        if not tweet.favorited:
+                            api.create_favorite(tweet.id)
+                            print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                            time.sleep(random.randint(10, 30))
+
+                    continue
+
+                # have random 70% chance of not replying to tweet (to appease the twitter gods)
+                if random.random() < 0.7:
+                    add_replied_to_tweet(tweet.id)
+
+                    # like the tweet some times regardless
+                    if random.random() < 0.2:
                         api.create_favorite(tweet.id)
-                continue
+                        print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                        time.sleep(random.randint(10, 30))
+                    continue
 
-            # have random 70% chance of not replying to tweet (to appease the twitter gods)
-            if random.random() < 0.7:
-                add_replied_to_tweet(tweet.id)
+                try:
 
-                # like the tweet half the time
-                if random.random() < 0.5:
+                    # print to log
+                    print(f"==================== Tweet ====================")
+                    print(f"{tweet.full_text}")
+                    print(f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                    print(f"==================== Response ====================")
+                    # generate response
+                    response = generate_response(tweet)
+                    print(f"{response}")
+                    print(f"==================== End ====================")
+
+                    # reply to tweet
+                    response_tweet = api.update_status(response, in_reply_to_status_id=tweet.id, auto_populate_reply_metadata=True)
+
+                    # like our own response tweet
+                    api.create_favorite(response_tweet.id)
+
+                    # add tweet id to replied to tweets
+                    add_replied_to_tweet(tweet.id)
+
+                    # like the tweet
                     api.create_favorite(tweet.id)
-                continue
 
-            try:
+                except Exception as e:
+                    print(e)
+                    print("Error, continuing...")
+                    continue
 
-                # print to log
-                print(f"==================== Tweet ====================")
-                print(f"{tweet.full_text}")
-                print(f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
-                print(f"==================== Response ====================")
-                # generate response
-                response = generate_response(tweet)
-                print(f"{response}")
-                print(f"==================== End ====================")
+                # wait random amount of time to avoid rate limiting (5 - 15 seconds)
+                time_to_wait = random.randint(60, 240)
+                print(f"Waiting {time_to_wait} seconds before checking for new tweets...")
+                time.sleep(time_to_wait)
+            
+            # wait 5 minutes before checking for new tweets
+            print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)")
+            print("Waiting 10 minutes before checking for new tweets...\n")
+            time.sleep(60 * 10)
+            minutes_passed += 10
 
-                # reply to tweet
-                response_tweet = api.update_status(response, in_reply_to_status_id=tweet.id, auto_populate_reply_metadata=True)
-
-                # like our own response tweet
-                api.create_favorite(response_tweet.id)
-
-                # add tweet id to replied to tweets
-                add_replied_to_tweet(tweet.id)
-
-                # like the tweet
-                api.create_favorite(tweet.id)
-
-            except Exception as e:
-                print(e)
-                print("Error, continuing...")
-                continue
-
-            # wait random amount of time to avoid rate limiting (5 - 15 seconds)
-            time_to_wait = random.randint(60, 240)
-            print(f"Waiting {time_to_wait} seconds before checking for new tweets...")
-            time.sleep(time_to_wait)
-        
-        # wait 5 minutes before checking for new tweets
-        print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)")
-        print("Waiting 10 minutes before checking for new tweets...\n")
-        time.sleep(60 * 10)
-        minutes_passed += 10
-
-        # if 8 hours have passed, make a dumb guru tweet
-        if minutes_passed >= 480:
-            minutes_passed = 0
-            try:
-                tweet = generate_guru_tweet()
-                status_tweet = api.update_status(tweet)
-                api.create_favorite(status_tweet.id)
-            except Exception as e:
-                print(e)
-                print("Error, continuing...")
-                continue
+            # if 8 hours have passed, make a dumb guru tweet
+            if minutes_passed >= 8 * 60:
+                minutes_passed = 0
+                try:
+                    tweet = generate_guru_tweet()
+                    status_tweet = api.update_status(tweet)
+                    api.create_favorite(status_tweet.id)
+                except Exception as e:
+                    print(e)
+                    print("Error, continuing...")
+                    continue
+        except Exception as e:
+            print(e)
+            print("Error, waiting 1 hour before trying again...")
+            time.sleep(60 * 60)
+            continue
         
 
 def generate_guru_tweet():
