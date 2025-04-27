@@ -1,4 +1,10 @@
-tweepy
-python-dotenv
-requests
+tweepy>=4.15.0
+python-dotenv>=1.0.0
+requests>=2.20.0
 urllib3
+openai>=1.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-mock>=3.0.0
+black

@@ -26,16 +26,16 @@ api = tweepy.API(auth)
 try:
     redirect_url = auth.get_authorization_url()
 except tweepy.TweepError:
-    print('Error! Failed to get request token.')
+    print("Error! Failed to get request token.")
 
 print(f"NAVIGATE TO: {redirect_url}")
 
-verifier = input('copy paste the oauth_verifier from the url: ')
+verifier = input("copy paste the oauth_verifier from the url: ")
 
 try:
     token, secret = auth.get_access_token(verifier)
 except tweepy.TweepError:
-    print('Error! Failed to get access token.')
+    print("Error! Failed to get access token.")
 
 print(f"ACCESS_TOKEN = {token}")
 print(f"ACCESS_TOKEN_SECRET = {secret}")

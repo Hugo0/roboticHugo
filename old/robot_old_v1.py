@@ -8,6 +8,7 @@ import random
 import urllib3
 import datetime
 import sys
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Load environment variables
@@ -15,16 +16,16 @@ dotenv.load_dotenv(".env")
 CONSUMER_KEY = os.getenv("TWITTER_API_KEY")
 CONSUMER_SECRET = os.getenv("TWITTER_API_KEY_SECRET")
 BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN") # Main account
-ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET") # Main account
-CLIENT_ACCESS_TOKEN = os.getenv("TWITTER_CLIENT_ACCESS_TOKEN") # Client 
-CLIENT_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_CLIENT_ACCESS_TOKEN_SECRET") # Client
+ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")  # Main account
+ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")  # Main account
+CLIENT_ACCESS_TOKEN = os.getenv("TWITTER_CLIENT_ACCESS_TOKEN")  # Client
+CLIENT_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_CLIENT_ACCESS_TOKEN_SECRET")  # Client
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Authenticate to Twitter
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 # auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET) # main account
-auth.set_access_token(CLIENT_ACCESS_TOKEN, CLIENT_ACCESS_TOKEN_SECRET) # bot account
+auth.set_access_token(CLIENT_ACCESS_TOKEN, CLIENT_ACCESS_TOKEN_SECRET)  # bot account
 
 # Create API object
 api = tweepy.API(auth)
@@ -42,25 +43,29 @@ def generate_response(tweet):
 
     # get OpenAI response
     headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {OPENAI_API_KEY}',
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
     }
     json_data = {
-        'model': 'text-davinci-003',
-        'prompt': prompt,
-        'max_tokens': 200,
-        'temperature': 1.0,
+        "model": "text-davinci-003",
+        "prompt": prompt,
+        "max_tokens": 200,
+        "temperature": 1.0,
     }
-    response = requests.post('https://api.openai.com/v1/completions', headers=headers, json=json_data, verify=False)
+    response = requests.post(
+        "https://api.openai.com/v1/completions",
+        headers=headers,
+        json=json_data,
+        verify=False,
+    )
     try:
         response_json = json.loads(response.text)
     except Exception as e:
         print(e)
         raise Exception("OpenAI API error")
 
-
     try:
-        text = response_json['choices'][0]['text']
+        text = response_json["choices"][0]["text"]
         text = sanitize_ai_response(text)
     except Exception as e:
         print(e)
@@ -86,13 +91,13 @@ def sanitize_ai_response(text):
         text = text[1:]
     if text.endswith('"'):
         text = text[:-1]
-    
+
     return text
 
 
 def is_tweet_valid(tweet):
     """Checks if a tweet is valid to reply to.
-    
+
     Rules to check:
     - should be a top level tweet
     - should not be a retweet, quote tweet, or reply
@@ -104,13 +109,13 @@ def is_tweet_valid(tweet):
     if tweet.in_reply_to_status_id is not None:
         return False
     # check if tweet is a retweet, quote tweet, or reply
-    if 'RT @' in tweet.full_text or tweet.is_quote_status:
+    if "RT @" in tweet.full_text or tweet.is_quote_status:
         return False
     # check if tweet has been replied to already by the bot
     if str(tweet.id) in get_replied_to_tweets():
         return False
     # check if tweet has a link, image, or any other media
-    if tweet.entities['urls'] or 'media' in tweet.entities:
+    if tweet.entities["urls"] or "media" in tweet.entities:
         return False
     # exempt @roboticHugo tweets from being replied to
     if tweet.user.screen_name == "roboticHugo":
@@ -119,7 +124,12 @@ def is_tweet_valid(tweet):
     if len(tweet.full_text) < 20:
         return False
     # check if any of the replies to the tweet are from the bot already (roboticHugo)
-    for reply in tweepy.Cursor(api.search_tweets, q=f"to:{tweet.user.screen_name}", since_id=tweet.id, tweet_mode="extended").items():
+    for reply in tweepy.Cursor(
+        api.search_tweets,
+        q=f"to:{tweet.user.screen_name}",
+        since_id=tweet.id,
+        tweet_mode="extended",
+    ).items():
         if reply.user.screen_name == "roboticHugo":
             return False
 
@@ -144,18 +154,24 @@ def add_replied_to_tweet(tweet_id):
 
 def main():
     """Main Loop. Gets tweets and then replies to them
-    
-        To not double reply, we keep track of the tweet ids we have replied to in a file
+
+    To not double reply, we keep track of the tweet ids we have replied to in a file
     """
     # check last time the bot made a top level tweet
-    last_tweet_time = api.user_timeline(screen_name="roboticHugo", count=1, tweet_mode="extended", exclude_replies=True)[0].created_at
-    hours_since = (datetime.datetime.now(tz=datetime.timezone.utc) - last_tweet_time).total_seconds() / 3600
+    last_tweet_time = api.user_timeline(
+        screen_name="roboticHugo", count=1, tweet_mode="extended", exclude_replies=True
+    )[0].created_at
+    hours_since = (
+        datetime.datetime.now(tz=datetime.timezone.utc) - last_tweet_time
+    ).total_seconds() / 3600
     if hours_since > 8:
         # make a top level guru tweet
         tweet = generate_guru_tweet()
         status_tweet = api.update_status(tweet)
         api.create_favorite(status_tweet.id)
-        print(f"Made top level tweet: https://twitter.com/roboticHugo/status/{status_tweet.id}")
+        print(
+            f"Made top level tweet: https://twitter.com/roboticHugo/status/{status_tweet.id}"
+        )
 
     # print to stderr
     print("Starting main loop...", file=sys.stderr)
@@ -173,11 +189,13 @@ def main():
                 # check if tweet is valid
                 if not is_tweet_valid(tweet):
                     invalid_tweet_count += 1
-                    
-                    if random.random() < 0.02: # small chance of liking the tweet
+
+                    if random.random() < 0.02:  # small chance of liking the tweet
                         if not tweet.favorited:
                             api.create_favorite(tweet.id)
-                            print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                            print(
+                                f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}"
+                            )
                             time.sleep(random.randint(10, 30))
 
                     continue
@@ -189,7 +207,9 @@ def main():
                     # like the tweet some times regardless
                     if random.random() < 0.2:
                         api.create_favorite(tweet.id)
-                        print(f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                        print(
+                            f"Liked tweet: https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}"
+                        )
                         time.sleep(random.randint(10, 30))
                     continue
 
@@ -198,7 +218,9 @@ def main():
                     # print to log
                     print(f"==================== Tweet ====================")
                     print(f"{tweet.full_text}")
-                    print(f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}")
+                    print(
+                        f"https://twitter.com/{tweet.user.screen_name}/status/{tweet.id}"
+                    )
                     print(f"==================== Response ====================")
                     # generate response
                     response = generate_response(tweet)
@@ -206,7 +228,11 @@ def main():
                     print(f"==================== End ====================")
 
                     # reply to tweet
-                    response_tweet = api.update_status(response, in_reply_to_status_id=tweet.id, auto_populate_reply_metadata=True)
+                    response_tweet = api.update_status(
+                        response,
+                        in_reply_to_status_id=tweet.id,
+                        auto_populate_reply_metadata=True,
+                    )
 
                     # like our own response tweet
                     api.create_favorite(response_tweet.id)
@@ -224,11 +250,15 @@ def main():
 
                 # wait random amount of time to avoid rate limiting (5 - 15 seconds)
                 time_to_wait = random.randint(60, 240)
-                print(f"Waiting {time_to_wait} seconds before checking for new tweets...")
+                print(
+                    f"Waiting {time_to_wait} seconds before checking for new tweets..."
+                )
                 time.sleep(time_to_wait)
-            
+
             # wait 5 minutes before checking for new tweets
-            print(f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)")
+            print(
+                f"Checked {len(tweets)} tweets, {invalid_tweet_count} were invalid tweets. (Replies, retweets, or already replied to.)"
+            )
             print("Waiting 10 minutes before checking for new tweets...\n")
             time.sleep(60 * 10)
             minutes_passed += 10
@@ -249,12 +279,23 @@ def main():
             print("Error, waiting 1 hour before trying again...")
             time.sleep(60 * 60)
             continue
-        
+
 
 def generate_guru_tweet():
     """Generates a tweet to post to the twitter account"""
 
-    adjectives = ['insightful', 'smart', 'intelligent', 'novel', 'cool', 'happy', 'pessimistic', 'innovative', 'teaching', 'original']
+    adjectives = [
+        "insightful",
+        "smart",
+        "intelligent",
+        "novel",
+        "cool",
+        "happy",
+        "pessimistic",
+        "innovative",
+        "teaching",
+        "original",
+    ]
     prompt = f"""You are an exceptionally smart person, using twitter. You have {random.randint(500, 50000)} followers and have written {random.randint(100, 3000)} tweets.
 Your fields of interest are AI, Blockchain, Software Development, Fullstack, Startups, Health, Fitness, and other stuff like that.
 Your tweets are often full of wisdom and short. You do not use hashtags.
@@ -262,29 +303,32 @@ Generate a {random.choice(adjectives)} tweet that you would post to your twitter
 
     # get OpenAI response
     headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {OPENAI_API_KEY}',
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
     }
     # get random seed
     seed = random.randint(0, 1000000000)
     json_data = {
-        'model': 'text-davinci-003',
-        'prompt': prompt,
-        'max_tokens': 300,
-        'temperature': 1.0,
+        "model": "text-davinci-003",
+        "prompt": prompt,
+        "max_tokens": 300,
+        "temperature": 1.0,
     }
-    response = requests.post('https://api.openai.com/v1/completions', headers=headers, json=json_data, verify=False)
+    response = requests.post(
+        "https://api.openai.com/v1/completions",
+        headers=headers,
+        json=json_data,
+        verify=False,
+    )
     try:
         response_json = json.loads(response.text)
     except Exception as e:
         print(e)
         raise Exception("OpenAI API error")
 
-
-    text = response_json['choices'][0]['text']
+    text = response_json["choices"][0]["text"]
     text = sanitize_ai_response(text)
     return text
-
 
 
 if __name__ == "__main__":
