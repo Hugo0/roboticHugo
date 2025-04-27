@@ -50,19 +50,20 @@ There are two ways to run the bot:
 
 1.  **Using the Run Script (Recommended):**
 
-            - Make the script executable (only needs to be done once):
-              ```bash
-              chmod +x run.sh
-              ```
-            - Run the script:
-              `bash
+                - Make the script executable (only needs to be done once):
+                  ```bash
+                  chmod +x run.sh
+                  ```
+                - Run the script:
+                  `bash
 
-        ./run.sh
-        `     or
+            ./run.sh
+            `     or
 
-    `bash
-bash run.sh
-`
+        `bash
+
+    bash run.sh
+    `
     This script activates the virtual environment and starts the bot.
 
 2.  **Manual Execution:**
@@ -86,4 +87,4 @@ The bot will run continuously, checking periodically if it needs to post a tweet
 
 ## Design goals:
 
-see docs/system.md
+See [docs/system.md](docs/system.md)

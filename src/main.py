@@ -295,7 +295,7 @@ def health_check():
 def index():
     """Main page of the Flask app - renders index.html."""
     # Render the template located in the 'templates' folder
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 # --- Background Bot Loop ---
