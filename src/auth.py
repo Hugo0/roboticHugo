@@ -31,27 +31,41 @@ def load_tokens():
 
 def save_tokens(access_token, refresh_token):
     """Saves the access and refresh tokens to the .env file."""
+    # Ensure ENV_FILE path is correct if called from different contexts
+    # (though config should handle this)
+    env_path = os.path.abspath(config.ENV_FILE)
     try:
-        log.info(f"Attempting to save refreshed tokens to {config.ENV_FILE}")
-        set_key(config.ENV_FILE, "TWITTER_ACCESS_TOKEN", access_token)
-        # Only save refresh token if it was actually provided (it might be None)
-        if refresh_token:
-            set_key(config.ENV_FILE, "TWITTER_REFRESH_TOKEN", refresh_token)
-            log.info("Successfully saved new access and refresh tokens.")
-        else:
-            # If refresh_token is None (e.g., because it became invalid),
-            # ensure the variable is removed or cleared in .env if set_key supports it,
-            # or just log that we saved only the access token.
-            # Current set_key likely just updates/adds, so we log accordingly.
-            log.info(
-                "Successfully saved new access token (refresh token not updated/provided)."
-            )
+        log.info(f"Attempting to save tokens to {env_path}")
+
+        # Handle Access Token
+        if isinstance(access_token, str) and access_token:
+            set_key(env_path, "TWITTER_ACCESS_TOKEN", access_token)
+            log.info("Saved TWITTER_ACCESS_TOKEN.")
+        elif access_token is None:
+            # If explicitly passed None, maybe clear it? Or just skip.
+            # Let's skip saving if None.
+            log.warning("Skipping save for TWITTER_ACCESS_TOKEN (value was None).")
+        else:  # Includes empty string
+            set_key(
+                env_path, "TWITTER_ACCESS_TOKEN", ""
+            )  # Save empty string if provided
+            log.warning("Saved empty value for TWITTER_ACCESS_TOKEN.")
+
+        # Handle Refresh Token
+        if isinstance(refresh_token, str) and refresh_token:
+            set_key(env_path, "TWITTER_REFRESH_TOKEN", refresh_token)
+            log.info("Saved TWITTER_REFRESH_TOKEN.")
+        elif refresh_token == "":  # Explicitly clearing the refresh token
+            set_key(env_path, "TWITTER_REFRESH_TOKEN", "")
+            log.warning("Cleared TWITTER_REFRESH_TOKEN in env file.")
+        else:  # Includes None
+            log.warning("Skipping save for TWITTER_REFRESH_TOKEN (value was None).")
+
         return True
     except Exception as e:
-        log.error(f"Failed to save tokens to {config.ENV_FILE}: {e}", exc_info=True)
-        # Avoid printing tokens to console here for security
+        log.error(f"Failed to save tokens to {env_path}: {e}", exc_info=True)
         print(
-            f"Error: Could not automatically save refreshed tokens to {config.ENV_FILE}. Bot may fail on next run."
+            f"Error: Could not automatically save tokens to {env_path}. Bot may fail on next run."
         )
         return False
 
@@ -122,14 +136,9 @@ def try_refresh_token(refresh_token, client_id, client_secret):
                 ):
                     print("Error: Refresh token is invalid or revoked.")
                     print("Please run authenticate.py manually to re-authorize.")
-                    # Clear the invalid refresh token in .env
-                    save_tokens(
-                        access_token=None, refresh_token=""
-                    )  # Pass current access token? Or None?
-                    return (
-                        None,
-                        None,
-                    )  # Signal hard failure, requires manual intervention
+                    # Clear the invalid refresh token, don't try saving access token here
+                    save_tokens(access_token=None, refresh_token="")
+                    return None, None  # Signal hard failure
                 else:
                     print(f"Error refreshing token: {e.response.status_code}")
             except Exception:
@@ -138,14 +147,11 @@ def try_refresh_token(refresh_token, client_id, client_secret):
                 )
         else:
             print(f"Error refreshing token (network issue?): {e}")
-        return (
-            None,
-            refresh_token,
-        )  # Indicate refresh failure, but keep old refresh token
+        return None, refresh_token  # Keep old RT on network errors etc.
 
     except Exception as e:
         log.error(f"Unexpected error during token refresh: {e}", exc_info=True)
-        return None, refresh_token  # Keep old refresh token on unexpected error
+        return None, refresh_token
 
 
 def test_api_call(access_token):

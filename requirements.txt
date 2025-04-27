@@ -3,6 +3,8 @@ python-dotenv>=1.0.0
 requests>=2.20.0
 urllib3
 openai>=1.0.0
+Flask>=2.0.0  # Web framework
+psutil>=5.0.0 # For system stats like memory
 
 # Testing
 pytest>=7.0.0

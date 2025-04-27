@@ -27,6 +27,7 @@ def get_last_tweet_time(user_id, access_token):
         "tweet.fields": "created_at",
     }
     try:
+        # @dev TODO: Uncomment this some day
         # response = requests.get(
         #     api_url,
         #     headers=headers,

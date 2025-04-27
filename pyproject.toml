@@ -10,18 +10,12 @@ readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License", # Or choose another license
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-# Add dependencies from requirements.txt here if desired, 
+
+# dependencies = [ ] # @dev Add dependencies here if desired,
 # otherwise pip install -r requirements.txt still works.
-# dependencies = [
-#     "python-dotenv>=1.0.0",
-#     "requests>=2.20.0",
-#     "openai>=1.0.0",
-#     # tweepy might be optional if only using authenticate.py manually
-#     "tweepy>=4.15.0", 
-# ]
 
 [tool.setuptools.packages.find]
 where = ["src"]  # Look for packages in src/ 
