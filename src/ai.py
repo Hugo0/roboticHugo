@@ -34,8 +34,9 @@ def sanitize_ai_response(text):
         log.warning(f"Attempted to sanitize non-string input: {type(text)}")
         return ""
     # split on <final_tweet> and take the last part
-    text = text.split("<final_tweet>")[1]
+    text = text.split("<final_tweet>")[1].split("</final_tweet>")[0]
     log.info(f"text after splitting on <final_tweet>: \n{text}")
+
     # Remove leading/trailing whitespace and common quote characters
     text = text.strip().strip('"').strip("'").strip("`").strip()
 
