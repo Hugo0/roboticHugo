@@ -16,7 +16,7 @@ SLEEP_INTERVAL_SECONDS = 60 * 60  # 1 hour
 POST_INTERVAL_HOURS = 24
 
 # --- APIs ---
-OPENAI_MODEL = "o3-mini"
+OPENAI_MODEL = "openai/o3-mini"
 X_API_BASE_URL = "https://api.twitter.com/2"
 
 # --- Timeouts (seconds) ---

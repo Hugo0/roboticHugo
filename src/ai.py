@@ -15,12 +15,12 @@ log = logging.getLogger(__name__)
 def initialize_openai_client():
     """Initializes and returns the OpenAI client."""
     load_dotenv(dotenv_path=config.ENV_FILE)  # Ensure API key is loaded
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    openai_api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
         log.error("OPENAI_API_KEY not found in environment variables.")
         return None
     try:
-        client = OpenAI(api_key=openai_api_key)
+        client = OpenAI(api_key=openai_api_key, base_url="https://openrouter.ai/api/v1")
         log.info("OpenAI client initialized.")
         return client
     except Exception as e:
